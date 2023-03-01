@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Tier List Maker</title>
+	<style>
+	body {
+		padding: 0;
+		margin: 0;
+		font-family: Arial;
+		font-size: 15px;
+		line-height: 19px;
+		color: #333333;
+	}
+	.outer-container {
+		margin: 0 auto;
+		box-sizing: border-box;
+		padding: 0;
+	}
+	.outer-main-flex {
+		display: flex;
+		justify-content: space-around;
+		align-items: flex-start;
+		max-width: 1500px;
+		margin: 0 auto;
+		width: 100%;
+	}
+	.main-container {
+		padding: 10px;
+		margin: 0 auto 200px auto;
+		box-sizing: border-box;
+		width: 100%;
+		max-width: 1140px;
+	}
+	.tier-title {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		justify-items: end;
+		width: 100%;
+		margin-top: 10px;
+		margin-bottom: 20px;
+		font-size: 40px;
+		line-height: 45px;
+		color: #000000;
+	}
+	.btns {
+		text-align: right;
+	}
+	.btn {
+		display: inline-block;
+		margin-left: auto;
+		font-size: 36px;
+		background: unset;
+		border: unset;
+		cursor: pointer;
+		opacity: 0.5;
+		padding-left: 10px;
+		box-sizing: border-box;
+	}
+	.btn:hover {
+		opacity: 1;
+	}
+	.sort {
+		-webkit-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+	}
+	.tier-wrap {
+		margin: 20px 0;
+		width: 100%;
+		max-width: 1200px;
+	}
+	.tier-container {
+		display: flex;
+		flex-direction: column;
+		border-left: solid 1px #000;
+		border-right: solid 1px #000;
+		background: #1a1a17;
+	}
+	.tier-row {
+		display: flex;
+		flex-direction: row;
+		min-height: 80px;
+		border-top: solid 1px #000;
+		border-bottom: solid 1px #000;
+	}
+	.tier.sort {
+		flex: 1;
+		line-height: 0;
+	}
+	.label-holder {
+		width: 100px;
+		min-height: 80px;
+		border-right: solid 1px #000;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.tier-row.s .label-holder {
+		background-color: #FF7F7F;
+	}
+	.tier-row.a .label-holder {
+		background-color: #FFBF7F;
+	}
+	.tier-row.b .label-holder {
+		background-color: #FFDF7F;
+	}
+	.tier-row.c .label-holder {
+		background-color: #FFFF7F;
+	}
+	.tier-row.d .label-holder {
+		background-color: #BFFF7F;
+	}
+	.label {
+		color: #333;
+		overflow: hidden;
+		text-align: center;
+		margin: 5px;
+	}
+	.bottom-container {
+		width: 100%;
+	}
+	.bottom-container.fixed {
+		position: fixed;
+		bottom: 10px;
+		left: 0;
+	}
+	.image-carousel {
+		height: 150px;
+		width: 100%;
+		max-width: 1140px;
+		display: flex;
+		list-style: none;
+		margin: 0 auto;
+		padding: 0;
+		overflow: scroll;
+		overflow-y: hidden;
+		scroll-behavior: smooth;
+	}
+	.fixed .image-carousel {
+		height: 140px;
+		padding: 10px 10px;
+		background-color: rgba(0, 0, 0, 0.3);
+	}
+@media only screen and (max-width: 800px) {
+	.bottom-container {
+		position: fixed;
+		width: 100%;
+		bottom: 10px;
+		left: 0;
+		padding: 10px 5px;
+		box-sizing: border-box;
+		background-color: rgba(0, 0, 0, 0.3);
+	}
+	.image-carousel {
+		height: 120px;
+		background-color: initial;
+	}
+	.fixed .image-carousel {
+		height: 120px;
+		padding: 0;
+		background-color: initial;
+	}
+}
+	.image-carousel div {
+		margin: 0 3px;
+	}
+	.draggable-image {
+		display: inline-block;
+		width: 80px;
+		height: 120px;
+		background-position: center;
+		background-size: contain;
+		background-repeat: no-repeat;
+		background-color: black;
+		flex: none;
+		cursor: pointer;
+	}
+	</style>
+	<script type="text/javascript" src="html2canvas.min.js"></script>
+	<script type="text/javascript">
+	function saveStorageData() {
+		var tierData = {
+			"s": [],
+			"a": [],
+			"b": [],
+			"c": [],
+			"d": []
+		};
+		for (const [key, list] of Object.entries(tierData)) {
+			var listElement = document.querySelector(`.tier-row.${key} > .tier.sort`);
+			for (var i = 0; i < listElement.children.length; i++) {
+				tierData[key].push(listElement.children[i].id.replace('img', ''));
+			}
+		}
+		window.localStorage.setItem('tierdata-imdbshows', JSON.stringify(tierData));
+	}
+	function loadStorageData() {
+		if (window.localStorage.getItem('tierdata-imdbshows') !== null) {
+			var tierData = JSON.parse(window.localStorage.getItem('tierdata-imdbshows'));
+			for (const [key, list] of Object.entries(tierData)) {
+				for (value of list) {
+					var listElement = document.querySelector(`.tier-row.${key} > .tier.sort`);
+					var imgElement = document.querySelector(`#img${value}`);
+					if (listElement !== null && imgElement !== null) {
+						listElement.append(imgElement);
+					}
+				}
+			}
+		}
+	}
+	function clearStorageData() {
+		if (confirm('Reset tier list?')) {
+			window.localStorage.removeItem('tierdata-imdbshows');
+			window.location.reload();
+		}
+	}
+	function saveAsImage() {
+		html2canvas(document.querySelector(".tier-wrap"), {allowTaint: true, useCORS: true, windowWidth: 1920, windowHeight: 1080}).then(canvas => {
+			var uri = canvas.toDataURL('image/png');
+			var link = document.createElement('a');
+			if (typeof link.download === 'string') {
+				link.href = uri;
+				link.download = 'tierlist.png';
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+			} else {
+				window.open(uri);
+			}
+		});
+	}
+	function pinCarousel() {
+		var windowHeight = window.innerHeight;
+		var widgetHeight = document.querySelector('.tier-container').offsetHeight;
+		if ((widgetHeight / windowHeight) > 0.7) {
+			document.querySelector('.bottom-container').classList.add('fixed');
+		} else {
+			document.querySelector('.bottom-container').classList.remove('fixed');
+		}
+	}
+	function allowDrop(e) {
+		e.preventDefault();
+	}
+	function drag(e) {
+		e.dataTransfer.setData('text', e.target.id);
+	}
+	function drop(e) {
+		e.preventDefault();
+		var data = e.dataTransfer.getData('text');
+		var movingElement = document.getElementById(data);
+		if (e.target.className.indexOf(' sort') > -1) {
+			var sortTarget = e.target;
+			e.target.appendChild(movingElement);
+		} else if (e.target.parentElement.className.indexOf(' sort') > -1) {
+			var sortTarget = e.target.parentElement;
+			var movingIndex = Array.from(sortTarget.children).indexOf(movingElement);
+			var targetIndex = Array.from(sortTarget.children).indexOf(e.target);
+			if (targetIndex > movingIndex) {
+				e.target.after(movingElement);
+			} else {
+				e.target.before(movingElement);
+			}
+		} else {
+			return;
+		}
+		if (sortTarget.className.indexOf('image-carousel') > -1) {
+			var sortMe = [];
+			for (var i = 0; i < sortTarget.children.length; i++) {
+				if (sortTarget.children[i].id.indexOf('img') < 0) {
+					continue;
+				}
+				sortMe.push([1 * sortTarget.children[i].id.split('img')[1], sortTarget.children[i]]);
+			}
+			sortMe.sort(function(a, b) {
+				return a[0] - b[0];
+			});
+			sortTarget.innerHTML = '';
+			for (var i = 0; i < sortMe.length; i++) {
+				sortTarget.appendChild(sortMe[i][1]);
+			}
+		}
+		pinCarousel();
+		saveStorageData();
+	}
+	window.addEventListener("load", (event) => {
+		loadStorageData();
+		pinCarousel();
+		document.querySelector('#saveimage').addEventListener('click', saveAsImage);
+		document.querySelector('#resetstate').addEventListener('click', clearStorageData);
+	});
+	window.addEventListener("resize", (event) => {
+		pinCarousel();
+	});
+	</script>
+</head>
+<body>
+
+<div class="outer-container">
+<div class="outer-main-flex">
+<div class="main-container">
+
+	<div class="tier-title">
+		<span>Сериальчики</span>
+		<div class="btns">
+			<button class="btn" id="saveimage" title="Save as image">📷</button>
+			<button class="btn" id="resetstate" title="Reset">🔄</button>
+		</div>
+	</div>
+
+	<div class="tier-wrap">
+		<div class="tier-container">
+			<div class="tier-row s" ondrop="drop(event)" ondragover="allowDrop(event)">
+				<div class="label-holder"><span class="label">Отличный</span></div>
+				<div class="tier sort"></div>
+			</div>
+			<div class="tier-row a" ondrop="drop(event)" ondragover="allowDrop(event)">
+				<div class="label-holder"><span class="label">Хороший</span></div>
+				<div class="tier sort"></div>
+			</div>
+			<div class="tier-row b" ondrop="drop(event)" ondragover="allowDrop(event)">
+				<div class="label-holder"><span class="label">Средний</span></div>
+				<div class="tier sort"></div>
+			</div>
+			<div class="tier-row c" ondrop="drop(event)" ondragover="allowDrop(event)">
+				<div class="label-holder"><span class="label">Не зацепил</span></div>
+				<div class="tier sort"></div>
+			</div>
+			<div class="tier-row d" ondrop="drop(event)" ondragover="allowDrop(event)">
+				<div class="label-holder"><span class="label">Не смотрел</span></div>
+				<div class="tier sort"></div>
+			</div>
+		</div>
+	</div>
+
+	<div class="bottom-container">
+		<div class="image-carousel sort" ondrop="drop(event)" ondragover="allowDrop(event)">
+			<div class="draggable-image" id="img1" style='background-image: url("pics/24 чaса.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img2" style='background-image: url("pics/BBC Планета Земля.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img3" style='background-image: url("pics/Аббатство Даунтон.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img4" style='background-image: url("pics/Американская история ужасов.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img5" style='background-image: url("pics/Американская семейка.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img6" style='background-image: url("pics/Американцы.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img7" style='background-image: url("pics/Андор.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img8" style='background-image: url("pics/Банши.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img9" style='background-image: url("pics/Баффи - истребительница вампиров.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img10" style='background-image: url("pics/Безумцы.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img11" style='background-image: url("pics/Белый воротничок.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img12" style='background-image: url("pics/Бесстыжие.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img13" style='background-image: url("pics/Блудливая Калифорния.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img14" style='background-image: url("pics/Большая маленькая ложь.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img15" style='background-image: url("pics/Братья по оружию.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img16" style='background-image: url("pics/Бруклин 9-9.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img17" style='background-image: url("pics/Бумажный дом.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img18" style='background-image: url("pics/В лучшем мире.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img19" style='background-image: url("pics/В поле зрения.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img20" style='background-image: url("pics/В Филадельфии всегда солнечно.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img21" style='background-image: url("pics/Ведьмак.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img22" style='background-image: url("pics/Викинги.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img23" style='background-image: url("pics/Во все тяжкие.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img24" style='background-image: url("pics/Восьмое чувство.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img25" style='background-image: url("pics/Ганнибал.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img26" style='background-image: url("pics/Грань.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img27" style='background-image: url("pics/Девочки Гилмор.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img28" style='background-image: url("pics/Декстер.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img29" style='background-image: url("pics/Джек Райан.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img30" style='background-image: url("pics/Джек Ричер.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img31" style='background-image: url("pics/Доктор Кто.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img32" style='background-image: url("pics/Доктор Хаус.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img33" style='background-image: url("pics/Дом Дракона.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img34" style='background-image: url("pics/Древние.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img35" style='background-image: url("pics/Друзья.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img36" style='background-image: url("pics/Дрянь.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img37" style='background-image: url("pics/Дэдвуд.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img38" style='background-image: url("pics/Женаты и с детьми.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img39" style='background-image: url("pics/Жизнь после смерти.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img40" style='background-image: url("pics/Задержка в развитии.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img41" style='background-image: url("pics/Закон и порядок Специальный корпус.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img42" style='background-image: url("pics/Звездный крейсер Галактика.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img43" style='background-image: url("pics/Звездный путь Следующее поколение.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img44" style='background-image: url("pics/Игра в кальмара.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img45" style='background-image: url("pics/Игра престолов.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img46" style='background-image: url("pics/Йеллоустоун.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img47" style='background-image: url("pics/Как избежать наказания за убийство.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img48" style='background-image: url("pics/Как я встретил вашу маму.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img49" style='background-image: url("pics/Каратель.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img50" style='background-image: url("pics/Карточный домик.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img51" style='background-image: url("pics/Касл.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img52" style='background-image: url("pics/Клиент всегда мертв.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img53" style='background-image: url("pics/Клиника.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img54" style='background-image: url("pics/Кобра Кай.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img55" style='background-image: url("pics/Когда они нас увидят.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img56" style='background-image: url("pics/Компьютерщики.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img57" style='background-image: url("pics/Конец ебаного мира.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img58" style='background-image: url("pics/Корона.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img59" style='background-image: url("pics/Космос Пространство и время.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img60" style='background-image: url("pics/Красавцы.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img61" style='background-image: url("pics/Крах.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img62" style='background-image: url("pics/Кремниевая долина.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img63" style='background-image: url("pics/Локи.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img64" style='background-image: url("pics/Лучше звоните Солу.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img65" style='background-image: url("pics/Лютер.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img66" style='background-image: url("pics/Люцифер.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img67" style='background-image: url("pics/Малкольм в центре внимания.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img68" style='background-image: url("pics/Мандалорец.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img69" style='background-image: url("pics/Мейр из Исттауна.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img70" style='background-image: url("pics/Менталист.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img71" style='background-image: url("pics/Мир Дикого Запада.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img72" style='background-image: url("pics/Миротворец.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img73" style='background-image: url("pics/Мистер Бин.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img74" style='background-image: url("pics/Мистер Робот.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img75" style='background-image: url("pics/Мотель Бейтсов.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img76" style='background-image: url("pics/Мыслить как преступник.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img77" style='background-image: url("pics/Нарко.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img78" style='background-image: url("pics/Наследники.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img79" style='background-image: url("pics/Настоящий детектив.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img80" style='background-image: url("pics/Невероятное.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img81" style='background-image: url("pics/Однажды ночью.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img82" style='background-image: url("pics/Одни из нас.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img83" style='background-image: url("pics/Озарк.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img84" style='background-image: url("pics/Оранжевый - хит сезона.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img85" style='background-image: url("pics/Оставленные.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img86" style='background-image: url("pics/Остаться в живых.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img87" style='background-image: url("pics/Острые козырьки.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img88" style='background-image: url("pics/Острые предметы.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img89" style='background-image: url("pics/Отбросы.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img90" style='background-image: url("pics/Офис.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img91" style='background-image: url("pics/Офис (BBC).jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img92" style='background-image: url("pics/Охотник за разумом.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img93" style='background-image: url("pics/Очень странные дела.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img94" style='background-image: url("pics/Парки и зоны отдыха.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img95" style='background-image: url("pics/Пацаны.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img96" style='background-image: url("pics/Планета Земля 2.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img97" style='background-image: url("pics/Побег.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img98" style='background-image: url("pics/Подпольная империя.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img99" style='background-image: url("pics/Половое воспитание.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img100" style='background-image: url("pics/Последнее королевство.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img101" style='background-image: url("pics/Последний танец.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img102" style='background-image: url("pics/Правосудие.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img103" style='background-image: url("pics/Призраки дома на холме.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img104" style='background-image: url("pics/Прослушка.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img105" style='background-image: url("pics/Пространство.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img106" style='background-image: url("pics/Разделение.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img107" style='background-image: url("pics/Рассказ служанки.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img108" style='background-image: url("pics/Рим.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img109" style='background-image: url("pics/Родина.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img110" style='background-image: url("pics/Сайнфелд.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img111" style='background-image: url("pics/Сверхъестественное.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img112" style='background-image: url("pics/Светлячок.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img113" style='background-image: url("pics/Секретные материалы.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img114" style='background-image: url("pics/Служба новостей.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img115" style='background-image: url("pics/Сообщество.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img116" style='background-image: url("pics/Сопрано.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img117" style='background-image: url("pics/Сорвиголова.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img118" style='background-image: url("pics/Спартак Боги арены.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img119" style='background-image: url("pics/Спартак Кровь и песок.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img120" style='background-image: url("pics/Страшные сказки.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img121" style='background-image: url("pics/Студия 30.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img122" style='background-image: url("pics/Сыны анархии.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img123" style='background-image: url("pics/Табу.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img124" style='background-image: url("pics/Твин Пикс.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img125" style='background-image: url("pics/Тед Лассо.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img126" style='background-image: url("pics/Телохранитель.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img127" style='background-image: url("pics/Тёмное дитя.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img128" style='background-image: url("pics/Теория большого взрыва.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img129" style='background-image: url("pics/Теория лжи.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img130" style='background-image: url("pics/Тихий океан.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img131" style='background-image: url("pics/Топ Гир.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img132" style='background-image: url("pics/Тьма.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img133" style='background-image: url("pics/Тюрьма ОZ.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img134" style='background-image: url("pics/Убивая Еву.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img135" style='background-image: url("pics/Убийства в одном здании.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img136" style='background-image: url("pics/Убийство.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img137" style='background-image: url("pics/Убийство на пляже.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img138" style='background-image: url("pics/Удивительная миссис Мэйзел.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img139" style='background-image: url("pics/Умерь свой энтузиазм.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img140" style='background-image: url("pics/Утреннее шоу.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img141" style='background-image: url("pics/Уэнздей.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img142" style='background-image: url("pics/Фарго.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img143" style='background-image: url("pics/Форс-мажоры.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img144" style='background-image: url("pics/Ход королевы.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img145" style='background-image: url("pics/Ходячие мертвецы.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img146" style='background-image: url("pics/Хранители.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img147" style='background-image: url("pics/Хулиганы и ботаны.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img148" style='background-image: url("pics/Чак.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img149" style='background-image: url("pics/Чернобыль.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img150" style='background-image: url("pics/Черное зеркало.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img151" style='background-image: url("pics/Чёрные Паруса.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img152" style='background-image: url("pics/Чёрный список.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img153" style='background-image: url("pics/Чужестранка.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img154" style='background-image: url("pics/Шерлок.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img155" style='background-image: url("pics/Шиттс Крик.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img156" style='background-image: url("pics/Шоу 70-х.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img157" style='background-image: url("pics/Эйфория.jpg");' draggable="true" ondragstart="drag(event)"></div>
+			<div class="draggable-image" id="img158" style='background-image: url("pics/Это мы.jpg");' draggable="true" ondragstart="drag(event)"></div>
+		</div>
+	</div>
+
+</div>
+</div>
+</div>
+
+</body>
+</html>
